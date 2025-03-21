@@ -7,6 +7,7 @@ from src.embedding_store import EmbeddingManager
 from src.llm_client import LLMClient
 from src.open_ie import get_openie_obj
 from src.rag_processing import RAGManager
+from src.dpr_retriever import get_dpr_retriever
 from global_logger import logger
 from src.utils import get_md5
 from src.triple_llm_filter import process_triple_filter
@@ -117,6 +118,12 @@ def main():
     else:
         logger.info("无新段落需要处理")
 
+    # 初始化DPR检索器
+    dpr_retriever = get_dpr_retriever(
+        llm_client_list[global_config["embedding"]["provider"]],
+        raw_paragraphs
+    )
+
     logger.info("------------开始QA------------")
     while True:
         print("请在此处输入问题，输入exit退出：", end="")
@@ -158,17 +165,22 @@ def main():
         part_start_time = time.time()
 
         # 使用LLM过滤三元组结果
-        filtered_triples = process_triple_filter(
-            llm_client_list[global_config["triple_filter"]["llm"]["provider"]],
-            question,
-            threshold_filtered_res
-        )
-        logger.info(f"LLM过滤三元组用时：{time.time() - part_start_time:.2f}s")
-        part_start_time = time.time()
+        if len(threshold_filtered_res) != 0:
+            filtered_triples = process_triple_filter(
+                llm_client_list[global_config["triple_filter"]["llm"]["provider"]],
+                question,
+                threshold_filtered_res
+            )
+            logger.info(f"LLM过滤三元组用时：{time.time() - part_start_time:.2f}s")
+            part_start_time = time.time()
 
         if len(threshold_filtered_res) == 0:
             logger.info("未找到相关关系，将进行密集文段检索（DPR）")
-            # TODO: 使用DPR检索
+            # 使用DPR检索
+            dpr_results = dpr_retriever.retrieve(question, top_k=5)
+            for passage, score in dpr_results:
+                logger.info(f"找到相关段落，相似度：{(score * 100):.2f}%  -  {passage[:100]}...")
+            
             logger.info(f"DPR检索用时：{time.time() - part_start_time:.2f}s")
             part_start_time = time.time()
             continue
