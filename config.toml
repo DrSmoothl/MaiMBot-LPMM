@@ -14,6 +14,11 @@ model = "deepseek-r1-distill-llama-8b" # 模型名称
 provider = "localhost"                 # 服务提供商
 model = "deepseek-r1-distill-llama-8b" # 模型名称
 
+[triple_filter.llm]
+# 设置用于进行三元组过滤的LLM模型
+provider = "localhost"                 #服务器提供商
+model = "deepseek-r1:8b"               #模型名称
+
 [embedding]
 # 设置用于文本嵌入的Embedding模型
 provider = "localhost"          # 服务提供商
@@ -39,3 +44,4 @@ openie_data_path = "data/openie.json"                # OpenIE数据路径
 embedding_data_dir = "data/embedding"                # 嵌入数据目录
 rag_data_dir = "data/rag"                            # RAG数据目录
 embed_index_path = "data/embedding/embed_index.json" # 嵌入索引路径
+filtered_triples_path = "data/filtered_triples.json" # 过滤后的三元组数据路径

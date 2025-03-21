@@ -18,6 +18,36 @@ def build_entity_extract_context(paragraph: str) -> str:
     messages.append(LLMMessage("user", f"""段落：\n```\n{paragraph}```""").to_dict())
     return messages
 
+llm_filter_system_prompt = """你是一个性能优异的三元组过滤系统。你的任务是根据给定的问题和三元组列表，判断每个三元组与问题的相关性。
+
+请使用JSON回复，输出过滤后的三元组列表。
+
+输出格式示例：
+{
+    "filtered_triples": [
+        ["实体A", "关系", "实体B"],
+        ["实体C", "关系", "实体D"]
+    ]
+}
+
+请注意以下要求：
+- 仅保留与问题语义相关的三元组
+- 三元组的相关性判断应基于问题的意图和主题
+- 如果三元组包含的实体或关系与问题中提到的概念有关,应当保留
+- 如果三元组能够帮助回答问题或提供相关背景信息,应当保留"""
+
+
+def build_llm_filter_context(question: str, triples: list) -> str:
+    messages = []
+    messages.append(LLMMessage("system", llm_filter_system_prompt).to_dict())
+    messages.append(
+        LLMMessage(
+            "user",
+            f"""问题：\n```\n{question}```\n\n三元组列表：\n```\n{triples}```"""
+        ).to_dict()
+    )
+    return messages
+
 
 rdf_triple_extract_system_prompt = """你是一个性能优异的RDF（资源描述框架，由节点和边组成，节点表示实体/资源、属性，边则表示了实体和实体之间的关系以及实体和属性的关系。）构造系统。你的任务是根据给定的段落和实体列表构建RDF图。
 

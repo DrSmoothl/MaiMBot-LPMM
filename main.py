@@ -9,6 +9,7 @@ from src.open_ie import get_openie_obj
 from src.rag_processing import RAGManager
 from global_logger import logger
 from src.utils import get_md5
+from src.triple_llm_filter import process_triple_filter
 
 
 def hash_deduplicate_and_reindex(
@@ -152,14 +153,18 @@ def main():
                 triple = tuple(triple[1:-1].split(", "))  # 去掉前后的括号，拆分为三元组
                 threshold_filtered_res.append((triple, res[1]))
 
-        del relation_search_res
 
         logger.info(f"关系查询用时：{time.time() - part_start_time:.2f}s")
         part_start_time = time.time()
 
-        # TODO: 使用LLM过滤三元组结果
-        # logger.info(f"LLM过滤三元组用时：{time.time() - part_start_time:.2f}s")
-        # part_start_time = time.time()
+        # 使用LLM过滤三元组结果
+        filtered_triples = process_triple_filter(
+            llm_client_list[global_config["triple_filter"]["llm"]["provider"]],
+            question,
+            threshold_filtered_res
+        )
+        logger.info(f"LLM过滤三元组用时：{time.time() - part_start_time:.2f}s")
+        part_start_time = time.time()
 
         if len(threshold_filtered_res) == 0:
             logger.info("未找到相关关系，将进行密集文段检索（DPR）")
